@@ -17,7 +17,7 @@ FocusTimerBot позволяет:
 
 1. Клонировать репозиторий:
 ```bash
-git clone https://github.com/yourusername/pomodoro_bot.git
+git clone https://github.com/anikitin2507/pomodoro_bot.git
 cd pomodoro_bot
 ```
 
@@ -34,16 +34,49 @@ source .venv/bin/activate  # Linux/macOS
 pip install -e .
 ```
 
-4. Создать файл `.env` в корне проекта:
+4. Создать файл `.env` в корне проекта на основе env.example:
 ```
 TELEGRAM_TOKEN=your_telegram_token
 DATABASE_URL=sqlite:///pomodoro.sqlite3
+DEBUG=True
 ```
 
 5. Запустить бота:
 ```bash
 python -m app.main
 ```
+
+### Деплой на Railway
+
+1. Зарегистрируйтесь на [Railway](https://railway.app/)
+
+2. Установите CLI Railway:
+```bash
+npm i -g @railway/cli
+```
+
+3. Войдите в свой аккаунт:
+```bash
+railway login
+```
+
+4. Создайте новый проект:
+```bash
+railway init
+```
+
+5. Добавьте переменные окружения:
+```bash
+railway variables set TELEGRAM_TOKEN=your_telegram_token
+railway variables set WEBHOOK_URL=https://your-app.railway.app/webhook
+```
+
+6. Разверните приложение:
+```bash
+railway up
+```
+
+Также можно настроить автоматический деплой при пуше в репозиторий GitHub, связав проект Railway с репозиторием в настройках.
 
 ## Лицензия
 
