@@ -20,15 +20,12 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
 # Create a non-root user
 RUN adduser --disabled-password --gecos "" appuser
 
-# Copy project files
-COPY pyproject.toml ./
-# Копируем только исходный код, без README
+# Copy app code
 COPY app/ ./app/
+COPY pyproject.toml ./
 
-# Install dependencies and app as a package
-RUN pip install --no-cache-dir poetry && \
-    poetry config virtualenvs.create false && \
-    pip install --no-cache-dir .
+# Install dependencies 
+RUN pip install --no-cache-dir -e .
 
 # Set ownership to non-root user
 RUN chown -R appuser:appuser /app
