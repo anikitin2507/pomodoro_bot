@@ -102,21 +102,29 @@ async def run_webhook():
     await application.start()
     
     try:
-        # Setup webhook
-        await application.bot.set_webhook(url=config.WEBHOOK_URL)
-        
         # Start webhook server
-        webhook_info = await application.bot.get_webhook_info()
-        logger.info(f"Webhook is set to: {webhook_info.url}")
+        url_path = config.WEBHOOK_URL.split("/")[-1] if config.WEBHOOK_URL.endswith("/webhook") else "webhook"
+        
+        base_url = "/".join(config.WEBHOOK_URL.split("/")[:-1]) if url_path != "webhook" else config.WEBHOOK_URL
+        
+        logger.info(f"Starting webhook with URL path: {url_path} on port {config.WEBHOOK_PORT}")
         
         # Run the webhook server
         await application.updater.start_webhook(
             listen="0.0.0.0",
             port=config.WEBHOOK_PORT,
-            url_path="",
+            url_path=url_path,
+            webhook_url=config.WEBHOOK_URL,
             drop_pending_updates=True,
             allowed_updates=["message", "callback_query"],
         )
+        
+        # Setup webhook
+        await application.bot.set_webhook(url=config.WEBHOOK_URL)
+        
+        # Check webhook info
+        webhook_info = await application.bot.get_webhook_info()
+        logger.info(f"Webhook is set to: {webhook_info.url}")
         
         await asyncio.Event().wait()  # Wait forever
     finally:

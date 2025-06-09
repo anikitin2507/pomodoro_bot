@@ -24,8 +24,9 @@ RUN adduser --disabled-password --gecos "" appuser
 COPY app/ ./app/
 COPY pyproject.toml ./
 
-# Install dependencies 
-RUN pip install --no-cache-dir -e .
+# Install dependencies with webhook support
+RUN pip install --no-cache-dir "python-telegram-bot[webhooks]>=20.0,<21.0" && \
+    pip install --no-cache-dir -e .
 
 # Set ownership to non-root user
 RUN chown -R appuser:appuser /app
