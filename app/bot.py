@@ -3,6 +3,7 @@
 import logging
 import asyncio
 from typing import Optional
+import time
 
 from telegram.ext import (
     ApplicationBuilder,
@@ -10,6 +11,7 @@ from telegram.ext import (
     CommandHandler,
     Defaults,
 )
+from telegram.error import RetryAfter
 
 from app.config import config
 from app.db.models import init_db
@@ -84,10 +86,17 @@ async def run_polling():
             allowed_updates=["message", "callback_query"],
         )
         await asyncio.Event().wait()  # Wait forever
+    except KeyboardInterrupt:
+        logger.info("Stopping bot due to keyboard interrupt")
+    except Exception as e:
+        logger.error(f"Error in polling: {e}", exc_info=True)
     finally:
         # Properly close the application
-        await application.stop()
-        await application.shutdown()
+        try:
+            await application.stop()
+            await application.shutdown()
+        except Exception as e:
+            logger.error(f"Error during shutdown: {e}")
 
 
 async def run_webhook():
@@ -98,36 +107,62 @@ async def run_webhook():
         
     application = await create_application()
     
-    # Start receiving updates
-    await application.start()
-    
     try:
-        # Start webhook server
+        # Start receiving updates
+        await application.start()
+        
+        # Extract path from webhook URL
         url_path = config.WEBHOOK_URL.split("/")[-1] if config.WEBHOOK_URL.endswith("/webhook") else "webhook"
-        
-        base_url = "/".join(config.WEBHOOK_URL.split("/")[:-1]) if url_path != "webhook" else config.WEBHOOK_URL
-        
         logger.info(f"Starting webhook with URL path: {url_path} on port {config.WEBHOOK_PORT}")
         
-        # Run the webhook server
+        # First set up the webhook server
         await application.updater.start_webhook(
             listen="0.0.0.0",
             port=config.WEBHOOK_PORT,
             url_path=url_path,
-            webhook_url=config.WEBHOOK_URL,
             drop_pending_updates=True,
             allowed_updates=["message", "callback_query"],
         )
         
-        # Setup webhook
-        await application.bot.set_webhook(url=config.WEBHOOK_URL)
+        # Then set the webhook with a delay to avoid flood control
+        try:
+            # Delete any existing webhook first
+            await application.bot.delete_webhook()
+            # Wait a bit to avoid Telegram rate limits
+            await asyncio.sleep(1)
+            # Set the new webhook
+            await application.bot.set_webhook(url=config.WEBHOOK_URL)
+            # Check webhook info
+            webhook_info = await application.bot.get_webhook_info()
+            logger.info(f"Webhook is set to: {webhook_info.url}")
+        except RetryAfter as e:
+            # If we hit rate limits, log and continue since the webhook server is already running
+            logger.warning(f"Hit rate limit when setting webhook: {e}. Will continue anyway.")
+        except Exception as e:
+            logger.error(f"Error setting webhook: {e}", exc_info=True)
+            # Continue anyway, as the webhook server is running
         
-        # Check webhook info
-        webhook_info = await application.bot.get_webhook_info()
-        logger.info(f"Webhook is set to: {webhook_info.url}")
-        
-        await asyncio.Event().wait()  # Wait forever
+        # Keep the app running indefinitely
+        stop_event = asyncio.Event()
+        await stop_event.wait()
+    except KeyboardInterrupt:
+        logger.info("Stopping bot due to keyboard interrupt")
+    except Exception as e:
+        logger.error(f"Error in webhook mode: {e}", exc_info=True)
     finally:
-        # Properly close the application
-        await application.stop()
-        await application.shutdown() 
+        # Properly close the application - with error handling
+        try:
+            # Try to delete the webhook before shutting down
+            try:
+                await application.bot.delete_webhook()
+            except Exception as e:
+                logger.error(f"Error deleting webhook: {e}")
+                
+            # Stop the webhook server
+            await application.updater.stop()
+            # Stop the application
+            await application.stop()
+            # Shut down the application
+            await application.shutdown()
+        except Exception as e:
+            logger.error(f"Error during shutdown: {e}") 
