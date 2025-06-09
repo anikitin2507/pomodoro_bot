@@ -5,7 +5,7 @@ import re
 from typing import Tuple, Union
 
 from telegram import InlineKeyboardButton, InlineKeyboardMarkup, Update
-from telegram.ext import ContextTypes
+from telegram.ext import CallbackContext
 
 from app.config import config
 from app.services.timer import timer_service
@@ -13,7 +13,7 @@ from app.services.timer import timer_service
 logger = logging.getLogger(__name__)
 
 
-async def start_handler(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
+async def start_handler(update: Update, context: CallbackContext) -> None:
     """Handle the /start command."""
     keyboard = [
         [
@@ -34,7 +34,7 @@ async def start_handler(update: Update, context: ContextTypes.DEFAULT_TYPE) -> N
     await update.effective_message.reply_text(welcome_text, reply_markup=reply_markup)
 
 
-async def help_handler(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
+async def help_handler(update: Update, context: CallbackContext) -> None:
     """Handle the /help command."""
     help_text = (
         "🍅 *FocusTimerBot* — бот для техники Pomodoro\n\n"
@@ -83,7 +83,7 @@ def parse_pomodoro_args(args: list) -> Tuple[int, int]:
     return work_minutes, break_minutes
 
 
-async def pomodoro_handler(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
+async def pomodoro_handler(update: Update, context: CallbackContext) -> None:
     """Handle the /pomodoro command."""
     # Parse arguments
     work_minutes, break_minutes = parse_pomodoro_args(context.args)
@@ -92,7 +92,7 @@ async def pomodoro_handler(update: Update, context: ContextTypes.DEFAULT_TYPE) -
     await timer_service.start_timer(update, context, work_minutes, break_minutes)
 
 
-async def today_handler(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
+async def today_handler(update: Update, context: CallbackContext) -> None:
     """Handle the /today command."""
     user_id = update.effective_user.id
     count = await timer_service.get_today_count(user_id)
@@ -114,7 +114,7 @@ async def today_handler(update: Update, context: ContextTypes.DEFAULT_TYPE) -> N
     await update.effective_message.reply_text(f"{emoji} {message}")
 
 
-async def callback_handler(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
+async def callback_handler(update: Update, context: CallbackContext) -> None:
     """Handle callback queries from inline keyboards."""
     query = update.callback_query
     await query.answer()  # Answer to remove the loading state

@@ -7,7 +7,7 @@ packages = [{include = "app"}]
 
 [tool.poetry.dependencies]
 python = "^3.10"
-python-telegram-bot = "^23.0"
+python-telegram-bot = "^20.0"
 SQLAlchemy = "^2.0"
 python-dotenv = "^1.0"
 asyncpg = "^0.29.0"

@@ -4,7 +4,7 @@ import logging
 from typing import Optional
 
 from telegram.ext import (
-    Application,
+    ApplicationBuilder,
     CallbackQueryHandler,
     CommandHandler,
     Defaults,
@@ -46,7 +46,7 @@ def create_application() -> Application:
 
     # Create application
     application = (
-        Application.builder().token(config.TELEGRAM_TOKEN).defaults(defaults).build()
+        ApplicationBuilder().token(config.TELEGRAM_TOKEN).defaults(defaults).build()
     )
 
     # Register handlers

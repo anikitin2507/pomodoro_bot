@@ -10,7 +10,7 @@ from apscheduler.schedulers.asyncio import AsyncIOScheduler
 from apscheduler.triggers.cron import CronTrigger
 from sqlalchemy.orm import Session
 from telegram import InlineKeyboardButton, InlineKeyboardMarkup, Update
-from telegram.ext import ContextTypes
+from telegram.ext import CallbackContext
 
 from app.config import config
 from app.db.models import PomodoroSession, User, get_db_session
@@ -55,7 +55,7 @@ class TimerService:
     async def start_timer(
         self,
         update: Update,
-        context: ContextTypes.DEFAULT_TYPE,
+        context: CallbackContext,
         work_minutes: int,
         break_minutes: int,
     ):
@@ -115,7 +115,7 @@ class TimerService:
     async def _work_timer(
         self,
         update: Update,
-        context: ContextTypes.DEFAULT_TYPE,
+        context: CallbackContext,
         work_minutes: int,
         break_minutes: int,
     ):
@@ -160,7 +160,7 @@ class TimerService:
     async def _break_timer(
         self,
         update: Update,
-        context: ContextTypes.DEFAULT_TYPE,
+        context: CallbackContext,
         message_id: int,
         break_minutes: int,
     ):
@@ -227,7 +227,7 @@ class TimerService:
 
         return count
 
-    async def skip_break(self, update: Update, context: ContextTypes.DEFAULT_TYPE):
+    async def skip_break(self, update: Update, context: CallbackContext):
         """Skip the break period and prompt for next round.
 
         Args:
