@@ -19,6 +19,7 @@ from app.handlers import (
     start_handler,
     today_handler,
 )
+from app.services.timer import timer_service
 
 # Configure logging
 logging.basicConfig(
@@ -28,7 +29,7 @@ logging.basicConfig(
 logger = logging.getLogger(__name__)
 
 
-def create_application() -> Application:
+def create_application() -> ApplicationBuilder:
     """Create and configure the bot application.
 
     Returns:
@@ -36,7 +37,7 @@ def create_application() -> Application:
     """
     # Initialize database
     init_db()
-
+    
     # Configure default behavior
     defaults = Defaults(
         parse_mode=None,
@@ -62,7 +63,7 @@ def create_application() -> Application:
     return application
 
 
-def run_polling(application: Optional[Application] = None) -> None:
+def run_polling(application: Optional[ApplicationBuilder] = None) -> None:
     """Run the bot with polling (for development).
 
     Args:
@@ -70,6 +71,9 @@ def run_polling(application: Optional[Application] = None) -> None:
     """
     if application is None:
         application = create_application()
+    
+    # Start the scheduler now that we have an event loop
+    timer_service.start_scheduler()
 
     application.run_polling(
         drop_pending_updates=True,
@@ -77,7 +81,7 @@ def run_polling(application: Optional[Application] = None) -> None:
     )
 
 
-def run_webhook(application: Optional[Application] = None) -> None:
+def run_webhook(application: Optional[ApplicationBuilder] = None) -> None:
     """Run the bot with webhook (for production).
 
     Args:
@@ -85,6 +89,9 @@ def run_webhook(application: Optional[Application] = None) -> None:
     """
     if application is None:
         application = create_application()
+    
+    # Start the scheduler now that we have an event loop
+    timer_service.start_scheduler()
 
     if not config.WEBHOOK_URL:
         logger.error("WEBHOOK_URL is not set, cannot start webhook mode")

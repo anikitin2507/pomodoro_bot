@@ -9,7 +9,7 @@ from app.config import config
 logger = logging.getLogger(__name__)
 
 
-def main():
+async def main():
     """Start the bot application."""
     logger.info("Starting Pomodoro bot...")
 
@@ -23,4 +23,4 @@ def main():
 
 
 if __name__ == "__main__":
-    main() 
+    asyncio.run(main()) 

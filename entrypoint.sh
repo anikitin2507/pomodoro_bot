@@ -2,4 +2,5 @@
 set -e
 
 echo "Starting Pomodoro Bot..."
-python -m app.main 
+# Используем Python для запуска приложения через asyncio
+python -c "import asyncio; from app.main import main; asyncio.run(main())" 

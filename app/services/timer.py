@@ -27,9 +27,16 @@ class TimerService:
     def __init__(self):
         """Initialize the TimerService."""
         self.scheduler = AsyncIOScheduler()
-        self.scheduler.start()
-        # Schedule daily reset at midnight for each user's timezone
-        self._schedule_daily_reset()
+        # Откладываем запуск планировщика до старта event loop
+        self.is_scheduler_started = False
+        
+    def start_scheduler(self):
+        """Start the scheduler when event loop is running."""
+        if not self.is_scheduler_started:
+            self.scheduler.start()
+            # Schedule daily reset at midnight for each user's timezone
+            self._schedule_daily_reset()
+            self.is_scheduler_started = True
 
     def _schedule_daily_reset(self):
         """Schedule daily reset for all users at their midnight."""
