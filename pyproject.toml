@@ -4,6 +4,7 @@ version = "0.1.0"
 description = "Telegram bot for Pomodoro technique"
 authors = ["Developer <developer@example.com>"]
 readme = "README.md"
+packages = [{include = "app"}]
 
 [tool.poetry.dependencies]
 python = "^3.10"
@@ -13,6 +14,7 @@ python-dotenv = "^1.0"
 asyncpg = "^0.29.0"
 apscheduler = "^3.10.4"
 pytz = "^2024.1"
+psycopg2-binary = "^2.9.9"
 
 [tool.poetry.group.dev.dependencies]
 ruff = "^0.1.8"
