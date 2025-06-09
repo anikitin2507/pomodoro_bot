@@ -1,0 +1,8 @@
+| Layer | Library / Service (version) | Purpose (1-liner) | Docs |
+|-------|-----------------------------|-------------------|------|
+| Runtime | **Python 3.11** | Primary language & runtime environment for bot logic. | <https://docs.python.org/3.11/> |
+| Bot SDK | **python-telegram-bot v23** | Simplest high-level API wrapper to receive updates and send messages/inline keyboards. | <https://docs.python-telegram-bot.org/en/v23.0/> |
+| OpenAI SDK | **openai v1.23** | Future integration for generating smart replies or summaries. | <https://github.com/openai/openai-python> |
+| Database | **PostgreSQL 15 (Railway)** + **SQLAlchemy 2.0** | Persist user timers & daily pomodoro counts in relational store. | <https://www.postgresql.org/docs/15/>  /  <https://docs.sqlalchemy.org/en/20/> |
+| Deployment | **Railway** | Zero-config cloud hosting & CI/CD for containerised Python apps. | <https://docs.railway.app/> |
+| Linter / Formatter | **ruff 0.5** & **black 24.4** | Enforce consistent style and catch common errors pre-commit. | <https://docs.astral.sh/ruff/> / <https://black.readthedocs.io/en/stable/> |

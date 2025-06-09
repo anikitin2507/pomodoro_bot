@@ -1,0 +1,37 @@
+---
+description: "Target file structure"
+alwaysApply: true
+---
+
+## Структура директорий
+
+| Папка | Назначение |
+|-------|------------|
+| `app/` | Исходный код бота и вспомогательных модулей |
+| `app/handlers/` | Разделённые по функциям Telegram-хендлеры |
+| `app/services/` | Логика таймера, планировщика и статистики |
+| `app/db/` | Модели и миграции БД |
+| `scripts/` | Утилиты CLI и локальные скрипты |
+| `tests/` | Юнит- и интеграционные тесты (pytest) |
+| `infra/` | Dockerfile, Railway-specific конфиги |
+| `.github/workflows/` | CI (lint, test, deploy) |
+| `docs/` | Дополнительная документация |
+
+## Главные файлы
+
+- `app/bot.py` — точка входа, инициализирует bot и регистрирует хендлеры.  
+- `app/config.py` — загружает переменные окружения и общие настройки.  
+- `app/services/timer.py` — core-логика Pomodoro-циклов.  
+- `app/db/models.py` — ORM-модели для пользователей и сессий.  
+- `pyproject.toml` — зависимости Poetry, конфигурация форматтера/линтера.  
+- `Dockerfile` — контейнер для Railway.  
+- `README.md` — инструкции по запуску и деплою.  
+
+## Генерируй новые файлы здесь
+
+- `app/`
+- `app/handlers/`
+- `app/services/`
+- `app/db/`
+- `tests/`
+- `scripts/`
