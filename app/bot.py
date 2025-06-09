@@ -2,6 +2,7 @@
 
 import logging
 import asyncio
+import os
 from typing import Optional
 import time
 
@@ -80,6 +81,9 @@ async def run_polling():
     await application.start()
     
     try:
+        # First, delete any existing webhook
+        await application.bot.delete_webhook()
+        
         # Keep the program running until it's interrupted
         await application.updater.start_polling(
             drop_pending_updates=True,
@@ -101,17 +105,15 @@ async def run_polling():
 
 async def run_webhook():
     """Run the bot with webhook (for production)."""
-    if not config.WEBHOOK_URL:
-        logger.error("WEBHOOK_URL is not set, cannot start webhook mode")
+    # Всегда запускаем в режиме polling, если на Railway не настроен домен
+    if not os.environ.get("RAILWAY_STATIC_URL"):
+        logger.info("No RAILWAY_STATIC_URL environment variable, switching to polling mode")
+        await run_polling()
         return
         
-    # Validate webhook URL
-    webhook_url = config.WEBHOOK_URL
-    if not webhook_url.startswith("https://"):
-        # Construct a valid HTTPS URL using the app's domain
-        domain = webhook_url if "://" not in webhook_url else webhook_url.split("://")[1]
-        webhook_url = f"https://{domain}"
-        logger.warning(f"WEBHOOK_URL does not start with https://, using {webhook_url} instead")
+    # Если есть RAILWAY_STATIC_URL, используем его для webhook
+    webhook_url = f"https://{os.environ.get('RAILWAY_STATIC_URL')}/webhook"
+    logger.info(f"Using webhook URL: {webhook_url}")
         
     application = await create_application()
     
@@ -119,63 +121,39 @@ async def run_webhook():
         # Start receiving updates
         await application.start()
         
-        # Extract path from webhook URL
-        url_path = webhook_url.split("/")[-1] if webhook_url.endswith("/webhook") else "webhook"
-        logger.info(f"Starting webhook with URL path: {url_path} on port {config.WEBHOOK_PORT}")
+        # Удаляем существующий webhook
+        await application.bot.delete_webhook()
+        await asyncio.sleep(1)  # Небольшая задержка
         
-        # Ensure the webhook URL ends with the correct path
-        if not webhook_url.endswith(f"/{url_path}"):
-            webhook_url = f"{webhook_url}/{url_path}"
-            logger.info(f"Adjusted webhook URL to: {webhook_url}")
+        # Устанавливаем новый webhook
+        await application.bot.set_webhook(url=webhook_url)
+        logger.info(f"Webhook set to: {webhook_url}")
         
-        # First set up the webhook server
+        # Запускаем webhook сервер
         await application.updater.start_webhook(
             listen="0.0.0.0",
-            port=config.WEBHOOK_PORT,
-            url_path=url_path,
+            port=int(os.environ.get("PORT", "8080")),
+            url_path="webhook",
             drop_pending_updates=True,
-            allowed_updates=["message", "callback_query"],
         )
         
-        # Then set the webhook with a delay to avoid flood control
-        try:
-            # Delete any existing webhook first
-            await application.bot.delete_webhook()
-            # Wait a bit to avoid Telegram rate limits
-            await asyncio.sleep(1)
-            # Set the new webhook
-            await application.bot.set_webhook(url=webhook_url)
-            # Check webhook info
-            webhook_info = await application.bot.get_webhook_info()
-            logger.info(f"Webhook is set to: {webhook_info.url}")
-        except RetryAfter as e:
-            # If we hit rate limits, log and continue since the webhook server is already running
-            logger.warning(f"Hit rate limit when setting webhook: {e}. Will continue anyway.")
-        except Exception as e:
-            logger.error(f"Error setting webhook: {e}", exc_info=True)
-            # Continue anyway, as the webhook server is running
+        # Проверяем, что webhook установлен
+        webhook_info = await application.bot.get_webhook_info()
+        logger.info(f"Webhook info: {webhook_info.url}")
         
-        # Keep the app running indefinitely
-        stop_event = asyncio.Event()
-        await stop_event.wait()
-    except KeyboardInterrupt:
-        logger.info("Stopping bot due to keyboard interrupt")
+        # Ждем бесконечно
+        await asyncio.Event().wait()
     except Exception as e:
         logger.error(f"Error in webhook mode: {e}", exc_info=True)
     finally:
-        # Properly close the application - with error handling
         try:
-            # Try to delete the webhook before shutting down
-            try:
-                await application.bot.delete_webhook()
-            except Exception as e:
-                logger.error(f"Error deleting webhook: {e}")
-                
-            # Stop the webhook server
+            # Удаляем webhook перед выключением
+            await application.bot.delete_webhook()
+            # Останавливаем updater
             await application.updater.stop()
-            # Stop the application
+            # Останавливаем приложение
             await application.stop()
-            # Shut down the application
+            # Завершаем приложение
             await application.shutdown()
         except Exception as e:
             logger.error(f"Error during shutdown: {e}") 
