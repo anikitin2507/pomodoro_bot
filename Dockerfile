@@ -22,19 +22,23 @@ RUN adduser --disabled-password --gecos "" appuser
 
 # Copy project files
 COPY pyproject.toml ./
-COPY README.md ./
+# Копируем только исходный код, без README
 COPY app/ ./app/
 
-# Install dependencies
+# Install dependencies and app as a package
 RUN pip install --no-cache-dir poetry && \
     poetry config virtualenvs.create false && \
-    poetry install --without dev --no-interaction --no-ansi
+    pip install --no-cache-dir .
 
 # Set ownership to non-root user
 RUN chown -R appuser:appuser /app
+
+# Add entrypoint script
+COPY entrypoint.sh /entrypoint.sh
+RUN chmod +x /entrypoint.sh
 
 # Switch to non-root user
 USER appuser
 
 # Run the application
-CMD ["python", "-m", "app.main"] 
+CMD ["/entrypoint.sh"] 
