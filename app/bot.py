@@ -1,6 +1,7 @@
 """Bot initialization and configuration."""
 
 import logging
+import asyncio
 from typing import Optional
 
 from telegram.ext import (
@@ -29,7 +30,7 @@ logging.basicConfig(
 logger = logging.getLogger(__name__)
 
 
-def create_application() -> ApplicationBuilder:
+async def create_application():
     """Create and configure the bot application.
 
     Returns:
@@ -57,50 +58,68 @@ def create_application() -> ApplicationBuilder:
     application.add_handler(CommandHandler("today", today_handler))
     application.add_handler(CallbackQueryHandler(callback_handler))
 
+    # Start the scheduler
+    timer_service.start_scheduler()
+    
+    # Initialize the application
+    await application.initialize()
+    
     # Log successful setup
     logger.info("Bot initialized successfully")
 
     return application
 
 
-def run_polling(application: Optional[ApplicationBuilder] = None) -> None:
-    """Run the bot with polling (for development).
-
-    Args:
-        application: Preconfigured application instance or None to create a new one
-    """
-    if application is None:
-        application = create_application()
+async def run_polling():
+    """Run the bot with polling (for development)."""
+    application = await create_application()
     
-    # Start the scheduler now that we have an event loop
-    timer_service.start_scheduler()
-
-    application.run_polling(
-        drop_pending_updates=True,
-        allowed_updates=["message", "callback_query"],
-    )
-
-
-def run_webhook(application: Optional[ApplicationBuilder] = None) -> None:
-    """Run the bot with webhook (for production).
-
-    Args:
-        application: Preconfigured application instance or None to create a new one
-    """
-    if application is None:
-        application = create_application()
+    # Start receiving updates
+    await application.start()
     
-    # Start the scheduler now that we have an event loop
-    timer_service.start_scheduler()
+    try:
+        # Keep the program running until it's interrupted
+        await application.updater.start_polling(
+            drop_pending_updates=True,
+            allowed_updates=["message", "callback_query"],
+        )
+        await asyncio.Event().wait()  # Wait forever
+    finally:
+        # Properly close the application
+        await application.stop()
+        await application.shutdown()
 
+
+async def run_webhook():
+    """Run the bot with webhook (for production)."""
     if not config.WEBHOOK_URL:
         logger.error("WEBHOOK_URL is not set, cannot start webhook mode")
         return
-
-    application.run_webhook(
-        listen="0.0.0.0",
-        port=config.WEBHOOK_PORT,
-        webhook_url=config.WEBHOOK_URL,
-        drop_pending_updates=True,
-        allowed_updates=["message", "callback_query"],
-    ) 
+        
+    application = await create_application()
+    
+    # Start receiving updates
+    await application.start()
+    
+    try:
+        # Setup webhook
+        await application.bot.set_webhook(url=config.WEBHOOK_URL)
+        
+        # Start webhook server
+        webhook_info = await application.bot.get_webhook_info()
+        logger.info(f"Webhook is set to: {webhook_info.url}")
+        
+        # Run the webhook server
+        await application.updater.start_webhook(
+            listen="0.0.0.0",
+            port=config.WEBHOOK_PORT,
+            url_path="",
+            drop_pending_updates=True,
+            allowed_updates=["message", "callback_query"],
+        )
+        
+        await asyncio.Event().wait()  # Wait forever
+    finally:
+        # Properly close the application
+        await application.stop()
+        await application.shutdown() 

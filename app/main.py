@@ -16,10 +16,10 @@ async def main():
     # Use polling in debug mode, webhook in production
     if config.DEBUG or not config.WEBHOOK_URL:
         logger.info("Starting in polling mode")
-        run_polling()
+        await run_polling()
     else:
         logger.info("Starting in webhook mode")
-        run_webhook()
+        await run_webhook()
 
 
 if __name__ == "__main__":
