@@ -105,6 +105,14 @@ async def run_webhook():
         logger.error("WEBHOOK_URL is not set, cannot start webhook mode")
         return
         
+    # Validate webhook URL
+    webhook_url = config.WEBHOOK_URL
+    if not webhook_url.startswith("https://"):
+        # Construct a valid HTTPS URL using the app's domain
+        domain = webhook_url if "://" not in webhook_url else webhook_url.split("://")[1]
+        webhook_url = f"https://{domain}"
+        logger.warning(f"WEBHOOK_URL does not start with https://, using {webhook_url} instead")
+        
     application = await create_application()
     
     try:
@@ -112,8 +120,13 @@ async def run_webhook():
         await application.start()
         
         # Extract path from webhook URL
-        url_path = config.WEBHOOK_URL.split("/")[-1] if config.WEBHOOK_URL.endswith("/webhook") else "webhook"
+        url_path = webhook_url.split("/")[-1] if webhook_url.endswith("/webhook") else "webhook"
         logger.info(f"Starting webhook with URL path: {url_path} on port {config.WEBHOOK_PORT}")
+        
+        # Ensure the webhook URL ends with the correct path
+        if not webhook_url.endswith(f"/{url_path}"):
+            webhook_url = f"{webhook_url}/{url_path}"
+            logger.info(f"Adjusted webhook URL to: {webhook_url}")
         
         # First set up the webhook server
         await application.updater.start_webhook(
@@ -131,7 +144,7 @@ async def run_webhook():
             # Wait a bit to avoid Telegram rate limits
             await asyncio.sleep(1)
             # Set the new webhook
-            await application.bot.set_webhook(url=config.WEBHOOK_URL)
+            await application.bot.set_webhook(url=webhook_url)
             # Check webhook info
             webhook_info = await application.bot.get_webhook_info()
             logger.info(f"Webhook is set to: {webhook_info.url}")
