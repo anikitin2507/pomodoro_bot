@@ -3,8 +3,6 @@
 import logging
 import asyncio
 import os
-from typing import Optional
-import time
 
 from telegram.ext import (
     ApplicationBuilder,
@@ -105,14 +103,12 @@ async def run_polling():
 
 async def run_webhook():
     """Run the bot with webhook (for production)."""
-    # Всегда запускаем в режиме polling, если на Railway не настроен домен
-    if not os.environ.get("RAILWAY_STATIC_URL"):
-        logger.info("No RAILWAY_STATIC_URL environment variable, switching to polling mode")
+    if not config.WEBHOOK_URL:
+        logger.info("WEBHOOK_URL not set, switching to polling mode")
         await run_polling()
         return
-        
-    # Если есть RAILWAY_STATIC_URL, используем его для webhook
-    webhook_url = f"https://{os.environ.get('RAILWAY_STATIC_URL')}/webhook"
+
+    webhook_url = config.WEBHOOK_URL
     logger.info(f"Using webhook URL: {webhook_url}")
         
     application = await create_application()
@@ -130,12 +126,12 @@ async def run_webhook():
         logger.info(f"Webhook set to: {webhook_url}")
         
         # Запускаем webhook сервер
-        await application.updater.start_webhook(
-            listen="0.0.0.0",
-            port=int(os.environ.get("PORT", "8080")),
-            url_path="webhook",
-            drop_pending_updates=True,
-        )
+            await application.updater.start_webhook(
+                listen="0.0.0.0",
+                port=config.WEBHOOK_PORT,
+                url_path="webhook",
+                drop_pending_updates=True,
+            )
         
         # Проверяем, что webhook установлен
         webhook_info = await application.bot.get_webhook_info()

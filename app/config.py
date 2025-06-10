@@ -25,7 +25,12 @@ class Config:
 
     # Webhook settings (for production)
     WEBHOOK_URL: Optional[str] = os.getenv("WEBHOOK_URL")
+    RAILWAY_STATIC_URL: Optional[str] = os.getenv("RAILWAY_STATIC_URL")
     WEBHOOK_PORT: int = int(os.getenv("PORT", "8443"))
+
+    # Construct webhook URL from Railway domain if needed
+    if not WEBHOOK_URL and RAILWAY_STATIC_URL:
+        WEBHOOK_URL = f"https://{RAILWAY_STATIC_URL}/webhook"
 
     # Default Pomodoro settings
     DEFAULT_WORK_MINUTES: int = 25
