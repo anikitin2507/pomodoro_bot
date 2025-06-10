@@ -126,12 +126,12 @@ async def run_webhook():
         logger.info(f"Webhook set to: {webhook_url}")
         
         # Запускаем webhook сервер
-            await application.updater.start_webhook(
-                listen="0.0.0.0",
-                port=config.WEBHOOK_PORT,
-                url_path="webhook",
-                drop_pending_updates=True,
-            )
+        await application.updater.start_webhook(
+            listen="0.0.0.0",
+            port=config.WEBHOOK_PORT,
+            url_path="webhook",
+            drop_pending_updates=True,
+        )
         
         # Проверяем, что webhook установлен
         webhook_info = await application.bot.get_webhook_info()
