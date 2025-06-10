@@ -65,11 +65,11 @@ railway login
 railway init
 ```
 
-5. Добавьте переменные окружения:
+5. Добавьте переменную окружения:
 ```bash
 railway variables set TELEGRAM_TOKEN=your_telegram_token
-railway variables set WEBHOOK_URL=https://your-app.railway.app/webhook
 ```
+После генерации домена Railway автоматически задаст `RAILWAY_STATIC_URL`, из которой бот сформирует `WEBHOOK_URL`.
 
 6. Разверните приложение:
 ```bash
